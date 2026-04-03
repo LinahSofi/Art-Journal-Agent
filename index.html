@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Art Journal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      font-family: 'Georgia', serif;
+      color: #f0e6d3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 3rem;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #e8c97e, #f4a261, #e76f51);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-style: italic;
+      color: #a89080;
+      margin-bottom: 50px;
+      font-size: 1rem;
+      letter-spacing: 2px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 700px;
+      backdrop-filter: blur(10px);
+    }
+
+    textarea {
+      width: 100%;
+      height: 160px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(232, 201, 126, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      color: #f0e6d3;
+      font-size: 1rem;
+      font-family: 'Georgia', serif;
+      resize: none;
+      outline: none;
+      transition: border 0.3s;
+    }
+
+    textarea::placeholder { color: #7a6a5a; }
+    textarea:focus { border-color: #e8c97e; }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(90deg, #e8c97e, #f4a261);
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: 'Georgia', serif;
+      color: #1a1a2e;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: opacity 0.3s;
+    }
+
+    button:hover { opacity: 0.85; }
+
+    .response {
+      margin-top: 30px;
+      padding: 24px;
+      background: rgba(232, 201, 126, 0.07);
+      border-left: 3px solid #e8c97e;
+      border-radius: 0 12px 12px 0;
+      line-height: 1.8;
+      font-size: 0.95rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎨 Art Journal</h1>
+  <p class="subtitle">describe · reflect · create</p>
+
+  <div class="card">
+    <textarea placeholder="Describe your artwork idea, a piece you're working on, or something that's inspiring you..."></textarea>
+    <button>✦ Get Critique & Inspiration</button>
+    <div class="response" id="response"></div>
+  </div>
+<script>
+  const button = document.querySelector('button');
+  const textarea = document.querySelector('textarea');
+  const response = document.getElementById('response');
+
+  button.addEventListener('click', async () => {
+    const userInput = textarea.value.trim();
+    if (!userInput) return;
+
+    button.textContent = '✦ Thinking...';
+    button.disabled = true;
+    response.style.display = 'block';
+    response.textContent = '';
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userInput })
+      });
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value);
+        response.innerHTML = fullText
+  .replace(/## (.*?)\n/g, '<h3>$1</h3>')
+  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  .replace(/\*(.*?)\*/g, '<em>$1</em>')
+  .replace(/\n/g, '<br>');
+      }
+
+    } catch (err) {
+      response.textContent = 'Something went wrong.';
+    }
+
+    button.textContent = '✦ Get Critique & Inspiration';
+    button.disabled = false;
+  });
+</script>
+</body>
+</html>
